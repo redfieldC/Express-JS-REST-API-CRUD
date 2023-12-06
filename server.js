@@ -1,30 +1,45 @@
-require('dotenv').config()
+require('dotenv').config();
 
-const express = require("express");
+const express = require('express');
+const mongoose = require('mongoose');
+const errorMiddleware = require('./middleware/errorMiddleware.js');
+const FRONTEND = process.env.FRONTEND
 
-const mongoose = require("mongoose"); //mongo setup
+var cors = require('cors')
+
 const app = express();
 
-const productRoute = require('./routes/productRoutes.js')
+const productRoute = require('./routes/productRoutes.js');
 
-app.use("/api/products",productRoute)
+// Middleware setup
+app.use(express.json());
+app.use('/api/products', productRoute);
 
-const MONGO_URL = process.env.MONGO_URL
-const PORT = process.env.PORT || 1000
+app.get('/',(req,res)=>{
+  throw new Error("FAKE ERROR")
+})
 
- //json middleware neccesary for api testing
+var corsOptions = {
+  origin: FRONTEND, //paste the react js server address here
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
-//mongo setup
+// Error middleware should be placed after other middlewares and routes
+app.use(errorMiddleware);
+app.use(cors(corsOptions))
+// .env
+const MONGO_URL = process.env.MONGO_URL;
+const PORT = process.env.PORT || 1000;
+
+// MongoDB setup
 mongoose
-  .connect(
-    MONGO_URL
-  )
+  .connect(MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
-    console.log(`Connected to mongodb server`);
+    console.log('Connected to MongoDB server');
   })
   .catch((err) => {
-    console.log(`error:`, err);
+    console.error('Error connecting to MongoDB:', err);
   });
